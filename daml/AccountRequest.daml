@@ -1,0 +1,36 @@
+module AccountRequest where
+
+import DA.Optional
+import Account
+
+
+
+--  Clients from BNY requesting to create the account to hold the tokens and bny accepting that
+template AccountCreationRequest
+  with
+    beneficiary : Party
+    custodian : Party
+  
+  where 
+    signatory  beneficiary
+    observer custodian
+
+    ensure beneficiary /= custodian
+
+    choice ApproveRequest :  Optional (ContractId Account)
+      controller custodian
+        do
+          isExists <- lookupByKey @Account (beneficiary,custodian)
+          if(isNone isExists) then
+            do
+              cid <- create Account 
+                    with
+                    beneficiary = beneficiary
+                    balance = 0
+                    custodian = custodian 
+                    afterDistribute = 0
+              return $ Some cid
+          else
+            return None
+    
+    

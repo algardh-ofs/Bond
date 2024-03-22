@@ -1,0 +1,44 @@
+module Account where
+
+
+
+template Account
+  with
+    custodian : Party
+    beneficiary : Party
+    balance : Int
+    afterDistribute : Int
+
+  where
+    signatory custodian , beneficiary
+
+    ensure balance >= 0
+    
+    key  (beneficiary,custodian) : (Party,Party)
+    maintainer key._1
+
+
+    choice TokenDistribute :  (ContractId Account)
+      with
+        amount : Int
+      controller custodian
+        do
+          assertMsg "transferTo and holder should not be same" (beneficiary /= custodian)
+          getholderData <- fetchByKey @Account (custodian,custodian)
+          assertMsg "transfer is asset is more than holdings" (getholderData._2.afterDistribute >= amount)
+          cid <- create this 
+            with
+              balance = balance + amount 
+          archive getholderData._1
+          create Account with
+              beneficiary = getholderData._2.beneficiary
+              balance = getholderData._2.balance
+              custodian = getholderData._2.custodian
+              afterDistribute = getholderData._2.afterDistribute - amount
+          return  cid
+
+    
+  
+    
+
+

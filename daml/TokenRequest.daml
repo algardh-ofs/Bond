@@ -1,0 +1,48 @@
+module TokenRequest where
+
+import DA.Optional
+import Account
+
+
+-- BNY requesting token from GS and GS accepting that
+template TokenRequest
+  with
+    transferFrom : Party
+    transferTo : Party
+    transferAmount : Int
+  where
+    signatory transferTo
+    observer transferFrom
+
+    ensure transferTo /= transferFrom
+
+    choice AllowTransferTokens : ContractId Account
+      controller transferFrom
+      do
+        currentAccountDetails <- fetchByKey @Account (transferFrom,transferFrom)
+        assertMsg "request amount is greater than current holdings" (currentAccountDetails._2.balance >= transferAmount)
+        isExists <- lookupByKey @Account (transferTo,transferTo) 
+        if(isNone isExists) then
+            do
+            create Account with
+              beneficiary = transferTo
+              balance = transferAmount
+              custodian = transferTo
+              afterDistribute = transferAmount
+          else
+            do
+              contractDetails <- fetchByKey @Account (transferTo,transferTo)
+              archive contractDetails._1
+              create Account with
+                beneficiary = transferTo
+                balance = contractDetails._2.balance + transferAmount 
+                custodian = transferTo
+                afterDistribute = contractDetails._2.afterDistribute
+        archive currentAccountDetails._1
+        create Account with
+                beneficiary = currentAccountDetails._2.beneficiary
+                balance = currentAccountDetails._2.balance - transferAmount 
+                custodian = currentAccountDetails._2.beneficiary
+                afterDistribute = currentAccountDetails._2.afterDistribute
+    
+

@@ -1,0 +1,77 @@
+module Script where
+
+import Daml.Script
+import BondRequest()
+import Account()
+import AccountRequest()
+import TokenRequest()
+
+setup : Script ()
+setup = script do
+  bank <- allocatePartyWithHint "IssuerBank" (PartyIdHint "IssuerBank")
+  uw <- allocatePartyWithHint "UnderWriter" (PartyIdHint "UnderWriter")
+  bny <- allocatePartyWithHint "BNYMellon" (PartyIdHint "BNYMellon")
+  bankx <- allocatePartyWithHint "BankX" (PartyIdHint "BankX")
+  banky <- allocatePartyWithHint "BankY" (PartyIdHint "BankY")
+  investA <- allocatePartyWithHint "InvestorA" (PartyIdHint "InvestorA")
+  investB <- allocatePartyWithHint "InvestorB" (PartyIdHint "InvestorB")
+  investC <- allocatePartyWithHint "InvestorC" (PartyIdHint "InvestorC")
+    
+  europeanBank <- validateUserId "IssuerBank"
+  gsbank <- validateUserId "UnderWriter"
+  bnymellon <- validateUserId "BNYMellon"
+  bankbofa <- validateUserId "BankX"
+  banksant <- validateUserId "BankY"
+  investorA <- validateUserId "InvestorA"
+  investorB <- validateUserId "InvestorB"
+  investorC <- validateUserId "InvestorC"
+
+  -- create user for seller and buyer
+  createUser (User europeanBank (Some (bank))) [CanActAs (bank)]
+  createUser (User gsbank (Some (uw))) [CanActAs (uw)]
+  createUser (User bnymellon (Some (bny))) [CanActAs (bny)]
+  createUser (User bankbofa (Some (bankx))) [CanActAs (bankx)]
+  createUser (User banksant (Some (banky))) [CanActAs (banky)]
+  createUser (User investorA (Some (investA))) [CanActAs (investA)]
+  createUser (User investorB (Some (investB))) [CanActAs (investB)]
+  createUser (User investorC (Some (investC))) [CanActAs (investC)]
+
+
+  -- cid <- submit uw do
+  --   createCmd BondRequest with
+  --     issuer = bank
+  --     buyer = uw
+  --     amountRequest = 500
+
+  -- submit bank do
+  --   exerciseCmd cid AllowMint
+  
+  -- bnyid <- submit bny do
+  --   createCmd TokenRequest
+  --     with
+  --       transferFrom =  uw
+  --       transferTo = bny
+  --       transferAmount  = 100
+
+  -- bnyid1 <-submit uw do
+  --   exerciseCmd bnyid  AllowTransferTokens
+
+  -- cide <- submit bankx  do
+  --   createCmd AccountCreationRequest with
+  --     beneficiary = bankx
+  --     custodian = bny
+
+ 
+  -- submit bny do
+  --   exerciseCmd cide ApproveRequest
+
+  -- [(bofaId, bofaData)] <- query @Account bankx
+
+  -- submit bny do
+  --   exerciseCmd bofaId TokenDistribute
+  --     with 
+  --       amount = 23
+
+
+  return()
+    

@@ -1,0 +1,41 @@
+module BondRequest where
+
+import DA.Optional
+import Account
+
+
+-- GS requesting bond from European bank and european bank accepting that.
+template BondRequest
+  with
+    issuer : Party
+    buyer: Party
+    amountRequest: Int
+  where
+    signatory buyer, 
+    observer issuer
+
+    ensure buyer /= issuer
+
+    choice MintTokens :  (ContractId Account)
+      controller issuer
+        do
+          isExists <- lookupByKey @Account (buyer,buyer)
+          if(isNone isExists) then
+            do
+              create Account with
+                beneficiary = buyer
+                balance = amountRequest
+                custodian = buyer
+                afterDistribute = 0
+          else 
+            do
+              fetchData <- fetchByKey @Account (buyer,buyer)
+              archive fetchData._1
+              create Account with
+                beneficiary = fetchData._2.beneficiary
+                balance = fetchData._2.balance+amountRequest
+                custodian = fetchData._2.custodian
+                afterDistribute = 0
+          
+
+
